@@ -35,6 +35,20 @@ export default function ProductForm({
     return null;
   }
 
+  async function uploadImage (event) {
+    const files = event.target?.files;
+
+    if(files?.lenght > 0){
+      const data = new FormData();
+
+      for(const file of files){
+        data.append('file', file)
+      }
+      const res = await axios.post('/api/upload', data)
+      console.log(res.data)
+    }
+  }
+
   return (
     <form onSubmit={saveProduct}>
       <label>Product name</label>
