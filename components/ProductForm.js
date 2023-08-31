@@ -50,35 +50,19 @@ export default function ProductForm({
     return null;
   }
 
-  console.log(useSession)
-
   async function uploadImage (event) {
-    const files = event.target.files
+    const files = event.target?.files;
 
-    console.log("User state:", auth.currentUser);
-
-  
-    // Utilisez getSession pour vérifier si l'utilisateur est authentifié
-  
-    if (session && files?.length > 0) {
-      // L'utilisateur est connecté et des fichiers ont été sélectionnés
+    if(files?.lenght > 0){
       const data = new FormData();
-  
-      for (const file of files) {
-        const storageRef = ref(storage, `images/${file.name}`);
-        await uploadBytes(storageRef, file);
-        const imageUrl = await getDownloadURL(storageRef);
-  
-        data.append('images', imageUrl);
+
+      for(const file of files){
+        data.append('file', file)
       }
-  
-      const res = await axios.post('/api/upload', data);
-      console.log(res);
-    } else if (!session) {
-      console.log('Utilisateur non connecté');
+      const res = await axios.post('/api/upload', data)
+      console.log(res.data)
     }
   }
-  
 
   return (
     <form onSubmit={saveProduct}>
