@@ -4,6 +4,7 @@ import { useRouter } from "next/router";
 import storage from "@/firebase/Config"
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage"
 import { useSession } from "next-auth/react";
+import {split} from "path"
 
 
 export default function ProductForm({
@@ -48,21 +49,30 @@ export default function ProductForm({
     const files = event.target.files;
   
     if (files?.length > 0) {
+      
       const data = new FormData();
   
       for (const file of files) {
-        const storageRef = ref(storage, `images/${file.name}`);
+        const ext = file.name.split('.').pop()
+        const newFileName = Date.now() + ('.') + ext
+        const storageRef = ref(storage, `images/${newFileName}`);
         await uploadBytes(storageRef, file);
         const imageUrl = await getDownloadURL(storageRef);
   
         const imageId = imageUrl.substring(imageUrl.lastIndexOf('/') + 1);
-        data.append('images', imageUrl);
+        data.append('file', file);
   
         console.log('Image URL:', imageUrl);
         console.log('Image ID:', imageId);
       }
   
-      const res = await axios.post('/api/upload', data);
+      //const res = await axios.post('/api/upload', data);
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        body: data,
+      })
+
+
       console.log(res);
     } else {
       console.log('Utilisateur non connecté ou pas de fichiers sélectionnés');
