@@ -1,10 +1,10 @@
 import { useState} from "react";
 import axios from "axios";
 import { useRouter } from "next/router";
-import storage from "@/firebase/Config";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { getAuth, onAuthStateChanged} from 'firebase/auth';
+import storage from "@/firebase/Config"
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage"
 import { useSession } from "next-auth/react";
+
 
 export default function ProductForm({
   _id,
@@ -13,22 +13,16 @@ export default function ProductForm({
   price: existingPrice,
   images,
 }) {
-  const { data: session } = useSession(); 
-  const auth = getAuth();
+  const {data : session} = useSession();
+
+  console.log('User session:', session);
+
   const [title, setTitle] = useState(existingTitle || "");
   const [description, setDescription] = useState(existingDescription || "");
   const [price, setPrice] = useState(existingPrice || "");
   const [goToProducts, setGoToProducts] = useState(false);
   const router = useRouter();
 
-  // Vérifiez si l'utilisateur Firebase est connecté
-  onAuthStateChanged(auth, (user) => {
-    if (user) {
-      console.log('Utilisateur Firebase connecté');
-    } else {
-      console.log('Utilisateur Firebase non connecté');
-    }
-  });
 
   const saveProduct = async (event) => {
     event.preventDefault();
@@ -50,19 +44,31 @@ export default function ProductForm({
     return null;
   }
 
-  async function uploadImage (event) {
-    const files = event.target?.files;
-
-    if(files?.lenght > 0){
+  async function uploadImage(event) {
+    const files = event.target.files;
+  
+    if (files?.length > 0) {
       const data = new FormData();
-
-      for(const file of files){
-        data.append('file', file)
+  
+      for (const file of files) {
+        const storageRef = ref(storage, `images/${file.name}`);
+        await uploadBytes(storageRef, file);
+        const imageUrl = await getDownloadURL(storageRef);
+  
+        const imageId = imageUrl.substring(imageUrl.lastIndexOf('/') + 1);
+        data.append('images', imageUrl);
+  
+        console.log('Image URL:', imageUrl);
+        console.log('Image ID:', imageId);
       }
-      const res = await axios.post('/api/upload', data)
-      console.log(res.data)
+  
+      const res = await axios.post('/api/upload', data);
+      console.log(res);
+    } else {
+      console.log('Utilisateur non connecté ou pas de fichiers sélectionnés');
     }
   }
+  
 
   return (
     <form onSubmit={saveProduct}>
