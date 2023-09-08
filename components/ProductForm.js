@@ -4,7 +4,6 @@ import { useRouter } from "next/router";
 import storage from "@/firebase/Config"
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage"
 import { useSession } from "next-auth/react";
-import {split} from "path"
 
 
 export default function ProductForm({
@@ -12,7 +11,7 @@ export default function ProductForm({
   title: existingTitle,
   description: existingDescription,
   price: existingPrice,
-  images,
+  imageUrl,
 }) {
   const {data : session} = useSession();
 
@@ -23,11 +22,12 @@ export default function ProductForm({
   const [price, setPrice] = useState(existingPrice || "");
   const [goToProducts, setGoToProducts] = useState(false);
   const router = useRouter();
+  const [uploadedImageUrl, setUploadedImageUrl] = useState("");
 
 
   const saveProduct = async (event) => {
     event.preventDefault();
-    const data = { title, description, price };
+    const data = { title, description, price, imageUrl: uploadedImageUrl };
 
     if (_id) {
       //update
@@ -58,9 +58,12 @@ export default function ProductForm({
         const storageRef = ref(storage, `images/${newFileName}`);
         await uploadBytes(storageRef, file);
         const imageUrl = await getDownloadURL(storageRef);
+
+        // Mettez à jour l'état avec l'URL de l'image téléchargée
+        setUploadedImageUrl(imageUrl);
   
         const imageId = imageUrl.substring(imageUrl.lastIndexOf('/') + 1);
-        data.append('file', file);
+        data.append('file', imageUrl);
   
         console.log('Image URL:', imageUrl);
         console.log('Image ID:', imageId);
@@ -92,7 +95,7 @@ export default function ProductForm({
 
       <label>Photos</label>
       <div className="mb-2">
-        <label className="w-24 h-24 flex text-sm gap-1 cursor-pointer text-gray-500 rounded-lg items-center justify-center bg-gray-200">
+        <label className="w-24 h-24 flex text-sm gap-1 cursor-pointer text-gray-500 mb-2 rounded-lg items-center justify-center bg-gray-200">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             fill="none"
@@ -112,7 +115,10 @@ export default function ProductForm({
           </div>
           <input type="file" className="hidden" onChange={uploadImage} />
         </label>
-        {!images?.length && <div>No photos in this product</div>}
+        {uploadedImageUrl && ( // Afficher l'image ici si uploadedImageUrl n'est pas vide
+        <img src={uploadedImageUrl} alt="Uploaded Image" className="w-24 h-24 flex rounded-md"/>
+      )}
+      
       </div>
 
       <label>Description</label>
