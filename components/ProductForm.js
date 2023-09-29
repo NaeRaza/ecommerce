@@ -11,7 +11,7 @@ export default function ProductForm({
   title: existingTitle,
   description: existingDescription,
   price: existingPrice,
-  imageUrl,
+  imageUrl: existingImageUrl,
 }) {
   const {data : session} = useSession();
 
@@ -22,20 +22,34 @@ export default function ProductForm({
   const [price, setPrice] = useState(existingPrice || "");
   const [goToProducts, setGoToProducts] = useState(false);
   const router = useRouter();
-  const [uploadedImageUrl, setUploadedImageUrl] = useState("");
-
+  const [uploadedImageUrl, setUploadedImageUrl] = useState(existingImageUrl || "");
+  console.log("image test :", uploadedImageUrl)
 
   const saveProduct = async (event) => {
     event.preventDefault();
     const data = { title, description, price, imageUrl: uploadedImageUrl };
+    console.log(data)
+
 
     if (_id) {
       //update
-      await axios.put("/api/products", { ...data, _id });
-    } else {
-      //create
-
-      await axios.post("/api/products", data);
+      try {
+        const response = await axios.put("/api/products", { ...data, _id });
+        console.log('Update response:', response.data); // Assurez-vous que la mise à jour s'est bien passée
+      } catch (error) {
+        console.error('Update error:', error);
+      }
+    } 
+    
+    else 
+    
+    {
+      try {
+        const response = await axios.post("/api/products", data);
+        console.log('Create response:', response.data); // Assurez-vous que la création s'est bien passée
+      } catch (error) {
+        console.error('Create error:', error);
+      }
     }
     setGoToProducts(!goToProducts);
   };
