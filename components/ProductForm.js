@@ -1,10 +1,9 @@
-import { useState} from "react";
+import { useState } from "react";
 import axios from "axios";
 import { useRouter } from "next/router";
-import storage from "@/firebase/Config"
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage"
-import { useSession } from "next-auth/react";
-
+import storage from "@/firebase/Config";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import Spinners from "./Spinners";
 
 export default function ProductForm({
   _id,
@@ -13,42 +12,39 @@ export default function ProductForm({
   price: existingPrice,
   imageUrl: existingImageUrl,
 }) {
-  const {data : session} = useSession();
-
-  console.log('User session:', session);
-
   const [title, setTitle] = useState(existingTitle || "");
   const [description, setDescription] = useState(existingDescription || "");
   const [price, setPrice] = useState(existingPrice || "");
   const [goToProducts, setGoToProducts] = useState(false);
+  const [isUploading, setIsUploading] = useState(false)
   const router = useRouter();
-  const [uploadedImageUrl, setUploadedImageUrl] = useState(existingImageUrl || "");
-  console.log("image test :", uploadedImageUrl)
+  const [uploadedImageUrls, setUploadedImageUrls] = useState(
+    existingImageUrl || "" || []
+  );
 
   const saveProduct = async (event) => {
     event.preventDefault();
-    const data = { title, description, price, imageUrl: uploadedImageUrl };
-    console.log(data)
-
+    const data = {
+      title,
+      description,
+      price,
+      imageUrl: uploadedImageUrls || [],
+    };
 
     if (_id) {
       //update
       try {
         const response = await axios.put("/api/products", { ...data, _id });
-        console.log('Update response:', response.data); // Assurez-vous que la mise à jour s'est bien passée
+        console.log("Update response:", response.data); // Assurez-vous que la mise à jour s'est bien passée
       } catch (error) {
-        console.error('Update error:', error);
+        console.error("Update error:", error);
       }
-    } 
-    
-    else 
-    
-    {
+    } else {
       try {
         const response = await axios.post("/api/products", data);
-        console.log('Create response:', response.data); // Assurez-vous que la création s'est bien passée
+        console.log("Create response:", response.data); // Assurez-vous que la création s'est bien passée
       } catch (error) {
-        console.error('Create error:', error);
+        console.error("Create error:", error);
       }
     }
     setGoToProducts(!goToProducts);
@@ -61,41 +57,35 @@ export default function ProductForm({
 
   async function uploadImage(event) {
     const files = event.target.files;
-  
+
     if (files?.length > 0) {
-      
+
+      setIsUploading(true)
       const data = new FormData();
-  
+      const newImageUrls = [];
+
       for (const file of files) {
-        const ext = file.name.split('.').pop()
-        const newFileName = Date.now() + ('.') + ext
-        const storageRef = ref(storage, `images/${newFileName}`);
+        const ext = file.name.split(".").pop();
+        const uniqueFileName =
+          file.name + "-" + Date.now() + "-" + Math.random() + "." + ext;
+        const storageRef = ref(storage, `images/${uniqueFileName}`);
         await uploadBytes(storageRef, file);
         const imageUrl = await getDownloadURL(storageRef);
 
-        // Mettez à jour l'état avec l'URL de l'image téléchargée
-        setUploadedImageUrl(imageUrl);
-  
-        const imageId = imageUrl.substring(imageUrl.lastIndexOf('/') + 1);
-        data.append('file', imageUrl);
-  
-        console.log('Image URL:', imageUrl);
-        console.log('Image ID:', imageId);
+        const uniqueImageUrl = imageUrl + `?cache=${Math.random()}`;
+        newImageUrls.push(uniqueImageUrl);
       }
-  
-      //const res = await axios.post('/api/upload', data);
-      const res = await fetch('/api/upload', {
-        method: 'POST',
-        body: data,
-      })
 
-
-      console.log(res);
+      // Mettez à jour l'état avec le tableau complet d'URLs d'images
+      setUploadedImageUrls([...uploadedImageUrls, ...newImageUrls]);
+      console.log("newImage : ", newImageUrls);
+      setIsUploading(false)
+      data.append("file", newImageUrls);
+      event.target.value = null;
     } else {
-      console.log('Utilisateur non connecté ou pas de fichiers sélectionnés');
+      console.log("Sélection de fichier annulée");
     }
   }
-  
 
   return (
     <form onSubmit={saveProduct}>
@@ -124,15 +114,28 @@ export default function ProductForm({
               d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"
             />
           </svg>
-          <div>
-          Upload
-          </div>
+          <div>Upload</div>
           <input type="file" className="hidden" onChange={uploadImage} />
         </label>
-        {uploadedImageUrl && ( // Afficher l'image ici si uploadedImageUrl n'est pas vide
-        <img src={uploadedImageUrl} alt="Uploaded Image" className="w-24 h-24 flex rounded-md"/>
-      )}
-      
+        <div className="w-100 flex flex-row">
+          {uploadedImageUrls?.length > 0 ? (
+            uploadedImageUrls.map((url, index) => (
+              <img
+                key={index}
+                src={url}
+                alt={`Uploaded Image ${index}`}
+                className="w-24 h-24 flex rounded-md mr-2 cursor-pointer"
+              />
+            ))
+          ) : (
+            <div>No photos in this project</div>
+          )}
+          {isUploading && (
+            <div className="flex justify-center items-center">
+              <Spinners />
+            </div>
+          )}
+        </div>
       </div>
 
       <label>Description</label>
