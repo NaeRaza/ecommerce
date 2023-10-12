@@ -4,6 +4,7 @@ import { useRouter } from "next/router";
 import storage from "@/firebase/Config";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import Spinners from "./Spinners";
+import { ReactSortable } from "react-sortablejs";
 
 export default function ProductForm({
   _id,
@@ -16,7 +17,7 @@ export default function ProductForm({
   const [description, setDescription] = useState(existingDescription || "");
   const [price, setPrice] = useState(existingPrice || "");
   const [goToProducts, setGoToProducts] = useState(false);
-  const [isUploading, setIsUploading] = useState(false)
+  const [isUploading, setIsUploading] = useState(false);
   const router = useRouter();
   const [uploadedImageUrls, setUploadedImageUrls] = useState(
     existingImageUrl || "" || []
@@ -59,8 +60,7 @@ export default function ProductForm({
     const files = event.target.files;
 
     if (files?.length > 0) {
-
-      setIsUploading(true)
+      setIsUploading(true);
       const data = new FormData();
       const newImageUrls = [];
 
@@ -79,12 +79,16 @@ export default function ProductForm({
       // Mettez à jour l'état avec le tableau complet d'URLs d'images
       setUploadedImageUrls([...uploadedImageUrls, ...newImageUrls]);
       console.log("newImage : ", newImageUrls);
-      setIsUploading(false)
+      setIsUploading(false);
       data.append("file", newImageUrls);
       event.target.value = null;
     } else {
       console.log("Sélection de fichier annulée");
     }
+  }
+
+  function updatedImageOrder(uploadedImageUrls) {
+    setUploadedImageUrls(uploadedImageUrls);
   }
 
   return (
@@ -98,6 +102,30 @@ export default function ProductForm({
       />
 
       <label>Photos</label>
+
+      <div className="w-100 flex flex-wrap gap-1">
+            <ReactSortable list={uploadedImageUrls} className="flex flex-wrap gap-1 mb-2" setList={updatedImageOrder}>
+              {uploadedImageUrls?.length > 0 ? (
+                uploadedImageUrls.map((url, index) => (
+                  <img
+                    key={index}
+                    src={url}
+                    alt={`Uploaded Image ${index}`}
+                    className="w-24 h-24 flex rounded-md mr-2 cursor-pointer"
+                  />
+                ))
+              ) : (
+                <div>No photos in this project</div>
+              )}
+            </ReactSortable>
+          
+
+          {isUploading && (
+            <div className="flex justify-center items-center">
+              <Spinners />
+            </div>
+          )}
+        </div>
       <div className="mb-2">
         <label className="w-24 h-24 flex text-sm gap-1 cursor-pointer text-gray-500 mb-2 rounded-lg items-center justify-center bg-gray-200">
           <svg
@@ -117,25 +145,6 @@ export default function ProductForm({
           <div>Upload</div>
           <input type="file" className="hidden" onChange={uploadImage} />
         </label>
-        <div className="w-100 flex flex-row">
-          {uploadedImageUrls?.length > 0 ? (
-            uploadedImageUrls.map((url, index) => (
-              <img
-                key={index}
-                src={url}
-                alt={`Uploaded Image ${index}`}
-                className="w-24 h-24 flex rounded-md mr-2 cursor-pointer"
-              />
-            ))
-          ) : (
-            <div>No photos in this project</div>
-          )}
-          {isUploading && (
-            <div className="flex justify-center items-center">
-              <Spinners />
-            </div>
-          )}
-        </div>
       </div>
 
       <label>Description</label>
