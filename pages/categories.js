@@ -1,14 +1,25 @@
 import Layout from "@/components/Layout";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import axios from "axios";
 
 export default function Categories() {
   const [name, setName] = useState("");
+  const [categories, setCategories] = useState([])
+
+  useEffect(()=>{
+    fetchCategories()
+  }, [])
+
+  function fetchCategories(){
+    axios.get('/api/categories')
+    .then((response)=> setCategories(response.data))
+  }
 
   async function saveCategory(event) {
     event.preventDefault()
     await axios.post("/api/categories", {name})
     setName("")
+    fetchCategories()
     }
   return (
     <Layout>
@@ -26,6 +37,20 @@ export default function Categories() {
           Save
         </button>
       </form>
+      <table className="basic mt-4">
+        <thead>
+          <tr>
+            <td>Category name</td>
+          </tr>
+        </thead>
+        <tbody>
+          {categories.length>0 && categories.map((categorie, index)=>(
+            <tr key={index}>
+              <td>{categorie.name}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </Layout>
   );
 }
