@@ -10,13 +10,13 @@ export default async function handle(req, res){
         if(req.query?.id){
             res.json(await Category.findOne({_id: req.query.id}))
         } else{
-            res.json(await Category.find())
+            res.json(await Category.find().populate('parent'))
         }
     }
 
     if(method === "POST"){
-        const {name} = req.body
-        const CategoryDoc =  await Category.create({name})
+        const {name, parentCategory} = req.body
+        const CategoryDoc =  await Category.create({name, parent: parentCategory})
         res.json(CategoryDoc)
     }
 }
