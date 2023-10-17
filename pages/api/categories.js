@@ -19,7 +19,7 @@ export default async function handle(req, res){
     if(method === "PUT"){
         const {name, parentCategory, _id} = req.body
         const CategoryDoc =  await Category.updateOne({_id},
-            {name, parent: parentCategory})
+            {name, parent: parentCategory || null})
         res.json(CategoryDoc)
     }
 
