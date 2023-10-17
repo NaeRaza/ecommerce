@@ -22,4 +22,10 @@ export default async function handle(req, res){
             {name, parent: parentCategory})
         res.json(CategoryDoc)
     }
+
+    if(method === "DELETE"){
+        const {_id} = req.query
+        await Category.deleteOne({_id})
+        res.json({message: "La catégorie a été bien supprimé"})
+    }
 }
