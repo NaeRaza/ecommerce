@@ -22,7 +22,7 @@ export default async function handle(req, res) {
       description,
       price,
       imageUrl,
-      category
+      category: category || null
     });
 
     res.json(newProduct);
@@ -30,7 +30,7 @@ export default async function handle(req, res) {
 
   if(method === "PUT"){
     const { title, description, price, _id, imageUrl, category } = req.body;
-    await Product.updateOne({_id}, {title, description, price, imageUrl, category})
+    await Product.updateOne({_id}, {title, description, price, imageUrl, category: category || null})
     res.json({message: "Le produit a été bien modifié"})
   }
 
