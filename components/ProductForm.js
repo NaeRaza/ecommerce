@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import axios from "axios";
 import { useRouter } from "next/router";
 import storage from "@/firebase/Config";
@@ -12,13 +12,23 @@ export default function ProductForm({
   description: existingDescription,
   price: existingPrice,
   imageUrl: existingImageUrl,
+  category: existingCategory
 }) {
   const [title, setTitle] = useState(existingTitle || "");
   const [description, setDescription] = useState(existingDescription || "");
   const [price, setPrice] = useState(existingPrice || "");
   const [goToProducts, setGoToProducts] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [category, setCategory] = useState(existingCategory || '')
+  const [categories, setCategories] = useState([])
   const router = useRouter();
+
+  useEffect(()=>{
+    axios.get("/api/categories")
+    .then((response)=> setCategories(response.data))
+    .catch((err)=> console.log(err))
+  }, [])
+
   const [uploadedImageUrls, setUploadedImageUrls] = useState(
     existingImageUrl || "" || []
   );
@@ -30,6 +40,7 @@ export default function ProductForm({
       description,
       price,
       imageUrl: uploadedImageUrls || [],
+      category
     };
 
     if (_id) {
@@ -91,6 +102,7 @@ export default function ProductForm({
     setUploadedImageUrls(uploadedImageUrls);
   }
 
+
   return (
     <form onSubmit={saveProduct}>
       <label>Product name</label>
@@ -100,7 +112,16 @@ export default function ProductForm({
         value={title}
         onChange={(e) => setTitle(e.target.value)}
       />
-
+      <label>Category</label>
+      <select value={category} onChange={ev => setCategory(ev.target.value)}>
+      <option value="">Uncategorized</option>
+          {categories.length > 0 &&
+            categories.map((categorie, index) => (
+              <option key={index} value={categorie._id}>
+                {categorie.name}
+              </option>
+            ))}
+      </select>
       <label>Photos</label>
 
       <div className="w-100 flex flex-wrap gap-1">
